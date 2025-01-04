@@ -54,7 +54,7 @@ const SignUpPage = () => {
 									onChange={(e) => setFormData({ ...formData, name: e.target.value })}
 									className='block w-full px-3 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-md shadow-sm
 									 placeholder-gray-400 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm'
-									placeholder='John Doe'
+									placeholder='Hemant Kumar'
 								/>
 							</div>
 						</div>
@@ -77,7 +77,7 @@ const SignUpPage = () => {
 									rounded-md shadow-sm
 									 placeholder-gray-400 focus:outline-none focus:ring-emerald-500 
 									 focus:border-emerald-500 sm:text-sm'
-									placeholder='you@example.com'
+									placeholder='hemantkumar@example.com'
 								/>
 							</div>
 						</div>
@@ -119,7 +119,7 @@ const SignUpPage = () => {
 									onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
 									className=' block w-full px-3 py-2 pl-10 bg-gray-700 border
 									 border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm'
-									placeholder='••••••••'
+									placeholder='numerals and special characters'
 								/>
 							</div>
 						</div>
@@ -158,3 +158,33 @@ const SignUpPage = () => {
 	);
 };
 export default SignUpPage;
+
+// backend/controllers/auth.controller.js
+
+export const signup = async (req, res) => {
+    const { email, password, name } = req.body;
+    try {
+        const userExists = await User.findOne({ email });
+
+        if (userExists) {
+            return res.status(400).json({ message: "User already exists" });
+        }
+        const user = await User.create({ name, email, password });
+
+        // authenticate
+        const { accessToken, refreshToken } = generateTokens(user._id);
+        await storeRefreshToken(user._id, refreshToken);
+
+        setCookies(res, accessToken, refreshToken);
+
+        res.status(201).json({
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+        });
+    } catch (error) {
+        console.log("Error in signup controller", error.message);
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+};
